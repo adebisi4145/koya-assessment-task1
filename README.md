@@ -97,7 +97,10 @@ The contract suite covers every status code in the spec, including 25 simultaneo
 
 ## Deployment
 
-Vercel (production branch `main`) with Neon Postgres. Environment variables: `DATABASE_URL` (Neon pooled connection string), `API_KEY`, and `API_BASE_URL` (the deployment's own URL, used by the page to call the API). Run `npm run db:migrate` against the production database once before the first deploy.
+Vercel (production branch `main`) with Neon Postgres, connected through Vercel's Neon integration.
+
+- **Environment variables:** `DATABASE_URL` (Neon's pooled connection string, set by the integration) and `API_KEY`. `API_BASE_URL` is optional on Vercel: it defaults to the project's production domain, which is what the page uses to call the API.
+- **Migrations** run automatically on every deploy: Vercel runs the `vercel-build` script (`db:migrate`, then `next build`), and migrations are idempotent.
 
 ## Known trade-offs
 

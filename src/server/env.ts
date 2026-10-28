@@ -17,7 +17,15 @@ let cached: Env | undefined;
  */
 export function env(): Env {
   if (!cached) {
-    const parsed = EnvSchema.safeParse(process.env);
+    const parsed = EnvSchema.safeParse({
+      ...process.env,
+      // On Vercel, default to the project's public production domain (set by the
+      // platform). Unlike per-deployment URLs it isn't behind Deployment Protection.
+      API_BASE_URL:
+        process.env.API_BASE_URL ||
+        (process.env.VERCEL_PROJECT_PRODUCTION_URL &&
+          `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`),
+    });
     if (!parsed.success) {
       const problems = parsed.error.issues
         .map((i) => `${i.path.join(".")}: ${i.message}`)
