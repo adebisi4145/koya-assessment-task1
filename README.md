@@ -2,18 +2,18 @@
 
 A clinic booking API plus a small web page that uses it: patients see available slots, book one, get a confirmation, and can cancel or look up their bookings. Built for Task 1 of the Koya Cohort 4 assessment, following the [contract](https://koyaacademy.com/assessment-api) exactly.
 
-|                  |                                                                                         |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| **Web page**     | `https://<deployment>.vercel.app`                                                       |
-| **API base URL** | `https://<deployment>.vercel.app` (endpoints are at the root: `/slots`, `/bookings`, …) |
-| **Auth**         | `X-API-Key: <key>` on every request (shared separately)                                 |
+|                  |                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| **Web page**     | https://koya-assessment-task1.vercel.app                                                         |
+| **API base URL** | `https://koya-assessment-task1.vercel.app` (endpoints are at the root: `/slots`, `/bookings`, …) |
+| **Auth**         | `X-API-Key: <key>` on every request (shared separately)                                          |
 
 **Stack:** TypeScript, Next.js 16 (route handlers for the API, React Server Components for the page), Postgres (Neon in production), Vercel, zod, Vitest, Playwright.
 
 ## Try it
 
 ```bash
-BASE=https://<deployment>.vercel.app
+BASE=https://koya-assessment-task1.vercel.app
 KEY=<api key>
 
 curl -s $BASE/slots -H "X-API-Key: $KEY"
