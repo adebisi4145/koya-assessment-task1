@@ -2,7 +2,12 @@ import "server-only";
 import { pool } from "../db";
 import { badRequest, conflict, notFound } from "../errors";
 import type { ApiResult } from "../http";
-import { type BookingRow, findBookingById, insertConfirmedBooking } from "../repos/bookings.repo";
+import {
+  type BookingRow,
+  cancelConfirmedBooking,
+  findBookingById,
+  insertConfirmedBooking,
+} from "../repos/bookings.repo";
 import { findSlotForBooking } from "../repos/slots.repo";
 import { NewBooking, parseOrThrow } from "../schemas";
 
@@ -49,4 +54,15 @@ export async function getBooking(id: string): Promise<BookingDto> {
   const row = UUID_RE.test(id) ? await findBookingById(pool(), id) : null;
   if (!row) throw notFound("booking not found");
   return toBookingDto(row);
+}
+
+export async function cancelBooking(id: string): Promise<BookingDto> {
+  if (!UUID_RE.test(id)) throw notFound("booking not found");
+
+  const cancelled = await cancelConfirmedBooking(pool(), id);
+  if (cancelled) return toBookingDto(cancelled);
+
+  // Nothing was updated: either the booking doesn't exist or it was already cancelled.
+  if (await findBookingById(pool(), id)) throw conflict("booking is already cancelled");
+  throw notFound("booking not found");
 }

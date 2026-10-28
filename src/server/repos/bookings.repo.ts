@@ -32,6 +32,24 @@ export async function insertConfirmedBooking(
   return rows[0] ?? null;
 }
 
+/**
+ * Atomically flips a confirmed booking to cancelled. Returns null if there is no
+ * confirmed booking with this id (it doesn't exist, or it is already cancelled).
+ * Leaving the 'confirmed' state releases the slot from the partial unique index.
+ */
+export async function cancelConfirmedBooking(
+  db: Queryable,
+  id: string,
+): Promise<BookingRow | null> {
+  const { rows } = await db.query<BookingRow>(
+    `UPDATE bookings SET status = 'cancelled'
+     WHERE id = $1 AND status = 'confirmed'
+     RETURNING ${COLUMNS}`,
+    [id],
+  );
+  return rows[0] ?? null;
+}
+
 export async function findBookingById(db: Queryable, id: string): Promise<BookingRow | null> {
   const { rows } = await db.query<BookingRow>(`SELECT ${COLUMNS} FROM bookings WHERE id = $1`, [
     id,
