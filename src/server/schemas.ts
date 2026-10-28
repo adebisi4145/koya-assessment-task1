@@ -33,10 +33,17 @@ export const ResetBody = z.object({
 });
 export type ResetBody = z.infer<typeof ResetBody>;
 
+// Deliberately simple: one "@", no spaces, a dot in the domain. Strict RFC 5322
+// validation rejects real addresses; deliverability is a confirmation-email concern.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const NewBooking = z.object({
   slot_id: requiredString("slot_id"),
-  name: requiredString("name"),
-  email: requiredString("email"),
+  name: requiredString("name").max(200, "name is too long"),
+  email: requiredString("email")
+    .max(254, "email is too long")
+    .toLowerCase()
+    .regex(EMAIL_RE, "email is invalid"),
 });
 export type NewBooking = z.infer<typeof NewBooking>;
 

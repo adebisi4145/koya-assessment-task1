@@ -1,8 +1,9 @@
 import "server-only";
 import { pool } from "../db";
-import { conflict, notFound } from "../errors";
+import { badRequest, conflict, notFound } from "../errors";
 import type { ApiResult } from "../http";
 import { type BookingRow, findBookingById, insertConfirmedBooking } from "../repos/bookings.repo";
+import { findSlotForBooking } from "../repos/slots.repo";
 import { NewBooking, parseOrThrow } from "../schemas";
 
 export interface BookingDto {
@@ -29,6 +30,11 @@ export function toBookingDto(row: BookingRow): BookingDto {
 
 export async function createBooking(body: Record<string, unknown>): Promise<ApiResult> {
   const input = parseOrThrow(NewBooking, body);
+
+  const slot = await findSlotForBooking(pool(), input.slot_id);
+  if (!slot) throw notFound("slot not found");
+  if (slot.started) throw badRequest("slot has already started");
+
   const row = await insertConfirmedBooking(pool(), {
     slotId: input.slot_id,
     name: input.name,
