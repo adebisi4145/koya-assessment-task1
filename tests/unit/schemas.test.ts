@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AppError } from "@/server/errors";
-import { NewBooking, parseOrThrow, ResetBody } from "@/server/schemas";
+import { ListBookingsQuery, NewBooking, parseOrThrow, ResetBody } from "@/server/schemas";
 
 function errorOf(fn: () => unknown): AppError {
   try {
@@ -56,6 +56,25 @@ describe("NewBooking", () => {
     expect(
       errorOf(() => parseOrThrow(NewBooking, { ...valid, name: "x".repeat(201) })).message,
     ).toBe("name is too long");
+  });
+});
+
+describe("ListBookingsQuery", () => {
+  it("defaults limit to 10 and lower-cases the email", () => {
+    expect(parseOrThrow(ListBookingsQuery, { email: " Ada@Example.com " })).toEqual({
+      email: "ada@example.com",
+      limit: 10,
+    });
+  });
+
+  it.each(["1", "50"])("accepts limit %s", (limit) => {
+    expect(parseOrThrow(ListBookingsQuery, { email: "a@b.co", limit }).limit).toBe(Number(limit));
+  });
+
+  it.each(["0", "51", "-1", "1.5", "abc", "", " 5"])("rejects limit %j", (limit) => {
+    expect(errorOf(() => parseOrThrow(ListBookingsQuery, { email: "a@b.co", limit })).message).toBe(
+      "limit must be an integer between 1 and 50",
+    );
   });
 });
 

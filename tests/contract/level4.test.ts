@@ -95,8 +95,11 @@ describe("Level 4: idempotent retries", () => {
 });
 
 describe("Level 4: GET /bookings pagination", () => {
+  // The Level 5 limit allows 5 booking attempts per email per minute, so this
+  // fixture uses exactly 5 and pages with small limits. (The default page size
+  // of 10 is covered by a unit test of the query schema.)
   const email = uniqueEmail("pager");
-  const TOTAL = 23;
+  const TOTAL = 5;
 
   beforeEach(async () => {
     await reset(Array.from({ length: TOTAL + 1 }, (_, i) => futureSlot(`p${i}`, 24 + i)));
@@ -118,7 +121,7 @@ describe("Level 4: GET /bookings pagination", () => {
     const sizes: number[] = [];
     let cursor: string | null = null;
     do {
-      const res = await listFor(email, `&limit=10${cursor ? `&cursor=${cursor}` : ""}`);
+      const res = await listFor(email, `&limit=2${cursor ? `&cursor=${cursor}` : ""}`);
       expect(res.status).toBe(200);
       expect(Object.keys(res.body).sort()).toEqual(["bookings", "next_cursor"]);
       sizes.push(res.body.bookings.length);
@@ -126,19 +129,19 @@ describe("Level 4: GET /bookings pagination", () => {
       cursor = res.body.next_cursor;
     } while (cursor);
 
-    expect(sizes).toEqual([10, 10, 3]);
+    expect(sizes).toEqual([2, 2, 1]);
     expect(seen).toEqual(Array.from({ length: TOTAL }, (_, i) => `p${i}`));
   });
 
-  it("defaults to 10 per page", async () => {
+  it("without a limit, returns everything up to the default page size", async () => {
     const res = await listFor(email);
-    expect(res.body.bookings).toHaveLength(10);
-    expect(typeof res.body.next_cursor).toBe("string");
+    expect(res.body.bookings).toHaveLength(TOTAL);
+    expect(res.body.next_cursor).toBeNull();
   });
 
   it("an exact final page has next_cursor null", async () => {
-    const res = await listFor(email, "&limit=23");
-    expect(res.body.bookings).toHaveLength(23);
+    const res = await listFor(email, `&limit=${TOTAL}`);
+    expect(res.body.bookings).toHaveLength(TOTAL);
     expect(res.body.next_cursor).toBeNull();
   });
 

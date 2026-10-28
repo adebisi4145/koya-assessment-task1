@@ -1,10 +1,18 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { lockFor, pool, withTransaction } from "../db";
-import { AppError, badRequest, conflict, notFound, unprocessable } from "../errors";
+import {
+  AppError,
+  badRequest,
+  conflict,
+  notFound,
+  tooManyRequests,
+  unprocessable,
+} from "../errors";
 import { type ApiResult, errorResult } from "../http";
 import { decodeCursor, encodeCursor } from "../lib/cursor";
 import { hashBody } from "../lib/hash";
+import { rateLimitKey } from "../lib/rate-limit";
 import {
   type BookingRow,
   cancelConfirmedBooking,
@@ -15,6 +23,7 @@ import {
 import { findStoredResponse, saveResponse } from "../repos/idempotency.repo";
 import { findSlotForBooking } from "../repos/slots.repo";
 import { ListBookingsQuery, NewBooking, parseOrThrow } from "../schemas";
+import { consumeAttempt } from "./rate-limit.service";
 
 export interface BookingDto {
   id: string;
@@ -64,6 +73,14 @@ export async function createBooking(
         }
         return { status: stored.status, body: stored.body };
       }
+    }
+
+    // Every attempt that reaches this point counts, whether or not it then succeeds.
+    // Replays above don't: they repeat an attempt rather than make a new one.
+    const email = rateLimitKey(body.email);
+    if (email) {
+      const retryAfter = await consumeAttempt(tx, email);
+      if (retryAfter !== null) return errorResult(tooManyRequests(retryAfter));
     }
 
     const result = await attemptBooking(tx, body);
