@@ -33,6 +33,26 @@ export async function insertConfirmedBooking(
 }
 
 /**
+ * One page of an email's bookings, oldest first, starting after `afterSeq`.
+ * Fetches `limit + 1` rows so the caller can tell whether another page exists.
+ */
+export async function listBookingsByEmail(
+  db: Queryable,
+  email: string,
+  afterSeq: string | null,
+  limit: number,
+): Promise<BookingRow[]> {
+  const { rows } = await db.query<BookingRow>(
+    `SELECT ${COLUMNS} FROM bookings
+     WHERE email = $1 AND ($2::bigint IS NULL OR seq > $2::bigint)
+     ORDER BY seq
+     LIMIT $3`,
+    [email, afterSeq, limit + 1],
+  );
+  return rows;
+}
+
+/**
  * Atomically flips a confirmed booking to cancelled. Returns null if there is no
  * confirmed booking with this id (it doesn't exist, or it is already cancelled).
  * Leaving the 'confirmed' state releases the slot from the partial unique index.

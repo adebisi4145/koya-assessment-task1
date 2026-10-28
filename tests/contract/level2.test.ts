@@ -6,6 +6,7 @@ const ROUTES: Array<[method: string, path: string]> = [
   ["POST", "/reset"],
   ["GET", "/slots"],
   ["POST", "/bookings"],
+  ["GET", "/bookings?email=a@example.com"],
   ["GET", "/bookings/00000000-0000-0000-0000-000000000000"],
   ["DELETE", "/bookings/00000000-0000-0000-0000-000000000000"],
 ];

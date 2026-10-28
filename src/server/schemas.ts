@@ -47,6 +47,28 @@ export const NewBooking = z.object({
 });
 export type NewBooking = z.infer<typeof NewBooking>;
 
+const LIMIT_MESSAGE = "limit must be an integer between 1 and 50";
+
+export const ListBookingsQuery = z.object({
+  email: requiredString("email").toLowerCase(),
+  limit: z
+    .string()
+    .regex(/^\d+$/, LIMIT_MESSAGE)
+    .transform(Number)
+    .pipe(z.number().int().min(1, LIMIT_MESSAGE).max(50, LIMIT_MESSAGE))
+    .optional()
+    .transform((limit) => limit ?? 10),
+  cursor: z.string().optional(),
+});
+export type ListBookingsQuery = z.infer<typeof ListBookingsQuery>;
+
+/** Idempotency-Key header: optional, but bounded so it can't be used to bloat storage. */
+export const IdempotencyKey = z
+  .string()
+  .trim()
+  .min(1, "Idempotency-Key must not be empty")
+  .max(255, "Idempotency-Key must be at most 255 characters");
+
 /** Parses input against a schema, throwing a 400 with the first problem's message. */
 export function parseOrThrow<S extends z.ZodType>(schema: S, input: unknown): z.infer<S> {
   const result = schema.safeParse(input);
